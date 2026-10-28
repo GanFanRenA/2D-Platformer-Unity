@@ -14,6 +14,14 @@ public class GameManager : MonoBehaviour
 
     private int coinCount = 0;
     private int gemCount = 0;
+    private int totalHealth = 3;
+    private void UpdatePlayerHealthUI()
+    {
+        for (int i = 0; i < playerHealthObj.transform.childCount; i++)
+        {
+            playerHealthObj.transform.GetChild(i).gameObject.GetComponent<UnityEngine.UI.Image>().sprite = i < totalHealth ? playerHealthObj.transform.GetChild(i).gameObject.GetComponent<UnityEngine.UI.Image>().sprite : playerHealthLossImg;
+        }
+    }
     private bool isGameOver = false;
     private Vector3 playerPosition;
 
@@ -22,13 +30,15 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject levelCompletePanel;
     [SerializeField] TMP_Text leveCompletePanelTitle;
     [SerializeField] TMP_Text levelCompleteCoins;
+    [SerializeField] GameObject playerHealthObj;
+    [SerializeField] Sprite playerHealthLossImg;
 
 
 
 
-   
+
     private int totalCoins = 0;
-  
+
 
 
 
@@ -61,7 +71,17 @@ public class GameManager : MonoBehaviour
     private void UpdateGUI()
     {
         coinText.text = coinCount.ToString();
-  
+
+    }
+
+    public void TakeDamage()
+    {
+        totalHealth--;
+        UpdatePlayerHealthUI();
+        if (totalHealth <= 0)
+        {
+            Death();
+        }
     }
 
     public void Death()
@@ -81,12 +101,9 @@ public class GameManager : MonoBehaviour
 
             // Update game state
             isGameOver = true;
-
-            // Log death message
-            Debug.Log("Died");
         }
     }
- 
+
     public void FindTotalPickups()
     {
 
@@ -98,15 +115,15 @@ public class GameManager : MonoBehaviour
             {
                 totalCoins += 1;
             }
-           
+
         }
 
 
-      
+
     }
     public void LevelComplete()
     {
-       
+
 
 
         levelCompletePanel.SetActive(true);
@@ -114,10 +131,10 @@ public class GameManager : MonoBehaviour
 
 
 
-        levelCompleteCoins.text = "COINS COLLECTED: "+ coinCount.ToString() +" / " + totalCoins.ToString();
- 
+        levelCompleteCoins.text = "COINS COLLECTED: " + coinCount.ToString() + " / " + totalCoins.ToString();
+
     }
-   
+
     public IEnumerator DeathCoroutine()
     {
         yield return new WaitForSeconds(1f);
@@ -131,7 +148,7 @@ public class GameManager : MonoBehaviour
         {
             SceneManager.LoadScene(1);
 
-            
+
         }
     }
 

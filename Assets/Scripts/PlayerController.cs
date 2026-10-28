@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum Controls { mobile,pc}
+public enum Controls { mobile, pc }
 
 public class PlayerController : MonoBehaviour
 {
@@ -17,13 +17,15 @@ public class PlayerController : MonoBehaviour
     public Transform groundCheck;
 
     private Rigidbody2D rb;
+    private Vector2 lastPosition;
+    private Vector2 lastPositionT;
     private bool isGroundedBool = false;
     private bool canDoubleJump = false;
 
     public Animator playeranim;
 
     public Controls controlmode;
-   
+
 
     private float moveX;
     public bool isPaused = false;
@@ -35,14 +37,15 @@ public class PlayerController : MonoBehaviour
     private bool wasonGround;
 
 
-   // public GameObject projectile;
-   // public Transform firePoint;
+    // public GameObject projectile;
+    // public Transform firePoint;
 
     public float fireRate = 0.5f; // Time between each shot
+    private float updatePosRate = 1f; // Time interval to update last position
     private float nextFireTime = 0f; // Time of the next allowed shot
 
 
-    
+
 
 
 
@@ -51,6 +54,7 @@ public class PlayerController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         footEmissions = footsteps.emission;
+        lastPosition = transform.position;
 
         if (controlmode == Controls.mobile)
         {
@@ -62,6 +66,7 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        updatePosRate -= Time.deltaTime;
         isGroundedBool = IsGrounded();
 
         if (isGroundedBool)
@@ -113,33 +118,33 @@ public class PlayerController : MonoBehaviour
 
         //impactEffect
 
-        if(!wasonGround && isGroundedBool)
+        if (!wasonGround && isGroundedBool)
         {
             ImpactEffect.gameObject.SetActive(true);
             ImpactEffect.Stop();
-            ImpactEffect.transform.position = new Vector2(footsteps.transform.position.x,footsteps.transform.position.y-0.2f);
+            ImpactEffect.transform.position = new Vector2(footsteps.transform.position.x, footsteps.transform.position.y - 0.2f);
             ImpactEffect.Play();
         }
 
         wasonGround = isGroundedBool;
 
-        
+
     }
     public void SetAnimations()
     {
         if (moveX != 0 && isGroundedBool)
         {
             playeranim.SetBool("run", true);
-            footEmissions.rateOverTime= 35f;
+            footEmissions.rateOverTime = 35f;
         }
         else
         {
-            playeranim.SetBool("run",false);
+            playeranim.SetBool("run", false);
             footEmissions.rateOverTime = 0f;
         }
 
         playeranim.SetBool("isGrounded", isGroundedBool);
-       
+
     }
 
     private void FlipSprite(float direction)
@@ -162,15 +167,15 @@ public class PlayerController : MonoBehaviour
         {
             moveX = Input.GetAxis("Horizontal");
         }
-       
 
 
-        rb.velocity = new Vector2(moveX * moveSpeed, rb.velocity.y);
+
+        rb.linearVelocity = new Vector2(moveX * moveSpeed, rb.linearVelocity.y);
     }
 
     private void Jump(float jumpForce)
     {
-        rb.velocity = new Vector2(rb.velocity.x, 0); // Zero out vertical velocity
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0); // Zero out vertical velocity
         rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
         playeranim.SetTrigger("jump");
     }
@@ -180,16 +185,24 @@ public class PlayerController : MonoBehaviour
         float rayLength = 0.25f;
         Vector2 rayOrigin = new Vector2(groundCheck.transform.position.x, groundCheck.transform.position.y - 0.1f);
         RaycastHit2D hit = Physics2D.Raycast(rayOrigin, Vector2.down, rayLength, groundLayer);
+        if (hit.collider != null && updatePosRate <= 0f)
+        {
+            lastPositionT = lastPosition;
+            lastPosition = transform.position;
+            rb.linearVelocity = Vector2.zero;
+            updatePosRate = 1f;
+        }
         return hit.collider != null;
     }
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.gameObject.tag == "killzone")
+        if (collision.gameObject.tag == "killzone")
         {
-            GameManager.instance.Death();
+            GameManager.instance.TakeDamage();
+            transform.position = lastPositionT;
         }
     }
-    
+
 
 
 
